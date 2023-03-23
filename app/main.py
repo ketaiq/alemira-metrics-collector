@@ -1,8 +1,6 @@
 # fetch APIs every 10s
 from app.apis import PrometheusAPI
-import time, argparse, datetime
-import pandas as pd
-import logging
+import time, argparse, datetime, json, os
 
 
 def collect_metrics(username: str, password: str):
@@ -12,12 +10,21 @@ def collect_metrics(username: str, password: str):
     total_metrics = len(metric_names)
     print(f"total metrics: {total_metrics}")
 
-    experiment_begin = datetime.datetime.fromisoformat("2023-03-20T19:26:28.000+01:00")
-    experiment_end = datetime.datetime.fromisoformat("2023-03-21T18:24:19.000+01:00")
+    experiment_begin = datetime.datetime.fromisoformat("2023-03-21T22:15:38.000+01:00")
+    experiment_end = datetime.datetime.fromisoformat("2023-03-22T22:14:50.000+01:00")
     step = "1m"
+    metrics_dir = os.path.join(".", "metrics")
+    if not os.path.exists(metrics_dir):
+        os.mkdir(metrics_dir)
 
     metric_names = prometheus_api.get_metric_names()
     num_metric_names = len(metric_names)
+    # store map of metric names
+    metric_names_map = dict(
+        [(index + 1, metric_name) for index, metric_name in enumerate(metric_names)]
+    )
+    with open(os.path.join(metrics_dir, "metric_names_map.json"), "w") as fp:
+        json.dump(metric_names_map, fp, indent=4)
     # collect instant metric
     # total_metric_values = 0
     # for name in metric_names:
@@ -31,7 +38,6 @@ def collect_metrics(username: str, password: str):
     day_count = 1
     start = experiment_begin
     while start < experiment_end:
-        metrics = {}
         start_timestamp = int(start.timestamp())
         end = start + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
         if end > experiment_end:
@@ -40,20 +46,21 @@ def collect_metrics(username: str, password: str):
 
         for i in range(num_metric_names):
             name = metric_names[i]
+            # the number after metric is the index of metric name in map of metric names
+            metric_file = os.path.join(
+                metrics_dir, f"metric-{i+1}-day-{day_count}.json"
+            )
             print(
                 f"collect metric {name} [{i+1}/{num_metric_names}] from day {day_count}"
             )
             range_metric = prometheus_api.get_range_metric(
                 name, start_timestamp, end_timestamp, step
             )
-            if range_metric["result"]:
-                metrics[name] = pd.Series(range_metric["result"])
-            else:
-                metrics[name] = pd.Series([])
+
+            with open(metric_file, "w") as fp:
+                json.dump(range_metric, fp, separators=(",", ":"))
             time.sleep(0.1)
         start += datetime.timedelta(days=1)
-        df = pd.DataFrame(metrics)
-        df.to_csv(f"day-{day_count}.csv", index=False)
         day_count += 1
 
 
