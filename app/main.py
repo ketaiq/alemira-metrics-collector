@@ -3,15 +3,28 @@ from app.apis import PrometheusAPI
 import time, argparse, datetime, json, os
 
 
-def collect_metrics(username: str, password: str):
-    """Collect metrics of last two weeks."""
+def collect_metrics(username: str, password: str, start: str, end: str):
+    """
+    Collect metrics of last two weeks.
+
+    Parameters
+    ----------
+    username : str
+        username of target Prometheus server
+    password : str
+        password of target Prometheus server
+    start : str
+        start time of the experiment in ISO8601 format
+    end : str
+        end time of the experiment in ISO8601 format
+    """
+    experiment_start = datetime.datetime.fromisoformat(start)
+    experiment_end = datetime.datetime.fromisoformat(end)
     prometheus_api = PrometheusAPI(username, password)
     metric_names = prometheus_api.get_metric_names()
     total_metrics = len(metric_names)
     print(f"total metrics: {total_metrics}")
 
-    experiment_begin = datetime.datetime.fromisoformat("2023-03-21T22:15:38.000+01:00")
-    experiment_end = datetime.datetime.fromisoformat("2023-03-22T22:14:50.000+01:00")
     step = "1m"
     metrics_dir = os.path.join(".", "metrics")
     if not os.path.exists(metrics_dir):
@@ -36,7 +49,7 @@ def collect_metrics(username: str, password: str):
 
     # collect range metric
     day_count = 1
-    start = experiment_begin
+    start = experiment_start
     while start < experiment_end:
         start_timestamp = int(start.timestamp())
         end = start + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
@@ -74,13 +87,15 @@ def main():
         "--username",
     )
     parser.add_argument("-p", "--password")
+    parser.add_argument("-s", "--start")
+    parser.add_argument("-e", "--end")
     args = parser.parse_args()
     # check username and password
     if not args.username:
         args.username = input("Please enter prometheus username: ")
     if not args.password:
         args.password = input("Please enter prometheus password: ")
-    collect_metrics(args.username, args.password)
+    collect_metrics(args.username, args.password, args.start, args.end)
 
 
 if __name__ == "__main__":
