@@ -28,3 +28,10 @@ Collect system metrics from prometheus of alemira.
 | 2 | cpu stress | linear | identity | Day 1 | 2023-03-23T10:33:07.000+01:00 | 2023-03-24T10:30:04.000+01:00 | 2023-03-23T20:44:00.000+01:00 | 2023-03-23T23:14:00.000+01:00 |
 | 3 | memory stress | linear | userhandlers | Day 1 | 2023-03-27T14:26:28.000+01:00 | 2023-03-28T14:24:36.000+01:00 | 2023-03-27T23:36:28+01:00 | 2023-03-28T02:36:28+01:00 |
 | 4 | cpu stress | linear | userhandlers | Day 1 | 2023-03-26T12:14:38.000+01:00 | 2023-03-27T12:13:39.000+01:00 | 2023-03-26T21:24:38+01:00 | 2023-03-27T00:24:38+01:00 |
+| 6 | network delay | linear | userapi | Day 8 | 2023-04-18T07:35:24+02:00 | 2023-04-18T12:35:24+02:00 | 2023-04-18T08:35:24+02:00 | 2023-04-18T11:35:24+02:00 |
+
+## 2. Environment
+
+```sh
+pip install google-cloud-monitoring
+```

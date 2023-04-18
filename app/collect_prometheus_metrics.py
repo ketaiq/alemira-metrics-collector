@@ -1,5 +1,5 @@
 # fetch APIs every 10s
-from app.apis import PrometheusAPI
+from app.prometheus_apis import PrometheusAPI
 import time, argparse, datetime, json, os
 
 
