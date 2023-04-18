@@ -38,6 +38,11 @@ def collect_metrics(start: str, end: str):
     for prefix in metric_type_prefixes:
         metric_descriptors = gcloud_api.get_metric_descriptors(prefix)
         for metric_desc in metric_descriptors:
+            logging.info(f"Processing metric type {metric_desc.type} ...")
+            if GMetric.metric_type_exists(metric_desc.type):
+                metric_type_index += 1
+                logging.warning(f"Metric type {metric_desc.type} already exists!")
+                continue
             # store metric type
             GMetric.write_metric_type(metric_type_index, metric_desc.type)
             # collect time series
@@ -59,10 +64,15 @@ def collect_metrics(start: str, end: str):
                 gmetric.write_kpi(metric_type_index, kpi_index)
                 kpi_index += 1
             metric_type_index += 1
-            time.sleep(1)
 
 
 def main():
+    logging.basicConfig(
+        filename="gcloud_metrics_collector.log",
+        level=logging.INFO,
+        format="%(levelname)s %(asctime)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S %z",
+    )
     parser = argparse.ArgumentParser(
         prog="Google Cloud Metrics Collector for Alemira",
         description="Collect metrics from Google Cloud services",
