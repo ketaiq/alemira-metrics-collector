@@ -2,5 +2,5 @@
 *.pyc
 .vscode
 metrics/
-gcloud_metrics/
+gcloud_metrics*/
 *.log
