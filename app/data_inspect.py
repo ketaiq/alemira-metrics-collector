@@ -36,11 +36,47 @@ def inspect_prometheus():
                     if item["values"]:
                         kpis.add(json.dumps(item["metric"], sort_keys=True))
     num_column = len(kpis)
-    print(f"{num_column} x {num_row}")
+    print(f"Prometheus time series data shape: {num_row} x {num_column}")
+
+
+def metric_type_exists(metric_path: str, folders: list, metric_type_index: int) -> bool:
+    for folder in folders:
+        if not os.path.exists(
+            os.path.join(metric_path, folder, f"metric-type-{metric_type_index}")
+        ):
+            return False
+    return True
+
+
+def inspect_gcloud():
+    metric_path = "gcloud-metrics"
+    folders = [
+        folder
+        for folder in os.listdir(metric_path)
+        if folder.startswith("gcloud_metrics-day")
+    ]
+    metric_type_map_path = os.path.join(metric_path, "metric_type_map.csv")
+    metric_type_map = pd.read_csv(metric_type_map_path).set_index("index")
+    num_column = 0
+    num_row = 60 * 24 * 14
+    for i in metric_type_map.index:
+        if not metric_type_exists(metric_path, folders, i):
+            continue
+        kpis = set()
+        for folder in folders:
+            kpi_map_path = os.path.join(
+                metric_path, folder, f"metric-type-{i}", "kpi_map.jsonl"
+            )
+            with jsonlines.open(kpi_map_path) as reader:
+                for kpi_map in reader:
+                    kpis.add(json.dumps(kpi_map["kpi"], sort_keys=True))
+        num_column += len(kpis)
+    print(f"GCloud time series data shape: {num_row} x {num_column}")
 
 
 def main():
-    inspect_prometheus()
+    # inspect_prometheus()
+    inspect_gcloud()
 
 
 if __name__ == "__main__":
