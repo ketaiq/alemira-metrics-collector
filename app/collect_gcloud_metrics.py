@@ -2,6 +2,7 @@ import argparse
 import logging
 from app.gcloud_apis import GCloudAPI
 from app.model.gmetric import GMetric
+from app.model.metric_kind import MetricKind
 from app.model.resource_label import ResourceLabel
 import time
 
@@ -43,7 +44,6 @@ def collect_metrics(start: str, end: str, metrics_dir_suffix: str = ""):
             logging.info(f"Processing metric type {metric_desc.type} ...")
             if GMetric.metric_type_exists(metrics_dir_suffix, metric_desc.type):
                 metric_type_index += 1
-                logging.warning(f"Metric type {metric_desc.type} already exists!")
                 continue
             # store metric type
             GMetric.write_metric_type(
@@ -70,22 +70,7 @@ def collect_metrics(start: str, end: str, metrics_dir_suffix: str = ""):
             metric_type_index += 1
 
 
-def main():
-    logging.basicConfig(
-        filename="gcloud_metrics_collector.log",
-        level=logging.WARNING,
-        format="%(levelname)s %(asctime)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S %z",
-    )
-    # parser = argparse.ArgumentParser(
-    #     prog="Google Cloud Metrics Collector for Alemira",
-    #     description="Collect metrics from Google Cloud services",
-    # )
-    # parser.add_argument("-s", "--start")
-    # parser.add_argument("-e", "--end")
-    # args = parser.parse_args()
-    # collect_metrics(args.start, args.end)
-
+def collect_failure_execution():
     times = [
         (
             "-day-1-linear-memory-identity",
@@ -124,6 +109,51 @@ def main():
         start = time[1]
         end = time[2]
         collect_metrics(start, end, metrics_dir_suffix)
+
+
+def collect_normal_execution():
+    times = [
+        ("-day-1", "2023-03-28T14:54:05+02:00", "2023-03-29T14:54:05+02:00"),
+        ("-day-2", "2023-03-29T17:15:40+02:00", "2023-03-30T17:15:40+02:00"),
+        ("-day-3", "2023-03-30T19:39:54+02:00", "2023-03-31T19:39:54+02:00"),
+        ("-day-4", "2023-03-31T19:56:58+02:00", "2023-04-01T19:56:58+02:00"),
+        ("-day-5", "2023-04-01T20:47:32+02:00", "2023-04-02T20:47:32+02:00"),
+        ("-day-6", "2023-04-02T21:48:03+02:00", "2023-04-03T21:48:03+02:00"),
+        ("-day-7", "2023-04-04T08:18:25+02:00", "2023-04-05T08:18:25+02:00"),
+        ("-day-8", "2023-04-05T08:53:00+02:00", "2023-04-06T08:53:00+02:00"),
+        ("-day-9", "2023-04-06T10:13:34+02:00", "2023-04-07T10:13:34+02:00"),
+        ("-day-10", "2023-04-08T19:01:09+02:00", "2023-04-09T19:01:09+02:00"),
+        ("-day-11", "2023-04-09T20:11:40+02:00", "2023-04-10T20:11:40+02:00"),
+        ("-day-12", "2023-04-10T20:27:13+02:00", "2023-04-11T20:27:13+02:00"),
+        ("-day-13", "2023-04-11T21:25:23+02:00", "2023-04-12T21:25:23+02:00"),
+        ("-day-14", "2023-04-12T22:00:52+02:00", "2023-04-13T22:00:52+02:00"),
+    ]
+    for i in range(len(times)):
+        time = times[i]
+        metrics_dir_suffix = time[0]
+        start = time[1]
+        end = time[2]
+        collect_metrics(start, end, metrics_dir_suffix)
+
+
+def main():
+    logging.basicConfig(
+        filename="gcloud_metrics_collector.log",
+        level=logging.WARNING,
+        format="%(levelname)s %(asctime)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S %z",
+    )
+    # parser = argparse.ArgumentParser(
+    #     prog="Google Cloud Metrics Collector for Alemira",
+    #     description="Collect metrics from Google Cloud services",
+    # )
+    # parser.add_argument("-s", "--start")
+    # parser.add_argument("-e", "--end")
+    # args = parser.parse_args()
+    # collect_metrics(args.start, args.end)
+
+    collect_normal_execution()
+    collect_failure_execution()
 
 
 if __name__ == "__main__":
