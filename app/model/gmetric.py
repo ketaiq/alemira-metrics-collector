@@ -20,24 +20,28 @@ class GMetric:
     @classmethod
     def from_time_series(cls, time_series) -> "GMetric":
         mtype = time_series.metric.type
-        labels = dict(time_series.metric.labels)
+        labels = (
+            dict(time_series.resource.labels)
+            | dict(time_series.metric.labels)
+            | {"resource_type": time_series.resource.type}
+        )
         df_points = None
         if time_series.value_type == ValueType.DOUBLE.value:
             points = [
-                (int(point.interval.start_time.timestamp()), point.value.double_value)
+                (int(point.interval.end_time.timestamp()), point.value.double_value)
                 for point in time_series.points
             ]
             df_points = pd.DataFrame(points, columns=["timestamp", "value"])
         elif time_series.value_type == ValueType.INT64.value:
             points = [
-                (int(point.interval.start_time.timestamp()), point.value.int64_value)
+                (int(point.interval.end_time.timestamp()), point.value.int64_value)
                 for point in time_series.points
             ]
             df_points = pd.DataFrame(points, columns=["timestamp", "value"])
         elif time_series.value_type == ValueType.DISTRIBUTION.value:
             points = [
                 (
-                    int(point.interval.start_time.timestamp()),
+                    int(point.interval.end_time.timestamp()),
                     point.value.distribution_value.count,
                     point.value.distribution_value.mean,
                     point.value.distribution_value.sum_of_squared_deviation,
@@ -50,9 +54,9 @@ class GMetric:
             )
         elif time_series.value_type == ValueType.BOOL.value:
             points = [
-                (int(point.interval.start_time.timestamp()), 1)
+                (int(point.interval.end_time.timestamp()), 1)
                 if point.value.bool_value
-                else (int(point.interval.start_time.timestamp()), 0)
+                else (int(point.interval.end_time.timestamp()), 0)
                 for point in time_series.points
             ]
             df_points = pd.DataFrame(points, columns=["timestamp", "value"])
@@ -106,9 +110,7 @@ class GMetric:
     def metric_type_exists(metrics_dir_suffix: str, metric_type: str) -> bool:
         """Check if the given metric type already exists."""
         metrics_dir = GMetric.METRICS_DIR_PREFIX + metrics_dir_suffix
-        metric_type_map_path = os.path.join(
-            metrics_dir, GMetric.METRIC_TYPE_MAP_FNAME
-        )
+        metric_type_map_path = os.path.join(metrics_dir, GMetric.METRIC_TYPE_MAP_FNAME)
         fieldnames = ["index", "metric_type"]
         if os.path.exists(metric_type_map_path):
             with open(metric_type_map_path, newline="") as csvfile:
