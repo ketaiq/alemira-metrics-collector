@@ -79,6 +79,7 @@ def is_constant_df(df: pd.DataFrame) -> bool:
 def merge_time_series(unique_kpi_maps: list, metric_type_index: int) -> pd.DataFrame:
     """Merge time series for each metric type and write to a csv file."""
     all_records = []
+    useless_kpi_maps = []
     for kpi_map in unique_kpi_maps:
         # get folders that share the same KPI
         folders = [key for key in kpi_map if key.startswith("gcloud_metrics-day")]
@@ -94,9 +95,7 @@ def merge_time_series(unique_kpi_maps: list, metric_type_index: int) -> pd.DataF
             combined_kpi.append(pd.read_csv(kpi_path))
         # merge time series of the same KPI
         combined_kpi_df = pd.concat(combined_kpi, ignore_index=True)
-        if not combined_kpi_df.empty and not is_constant_df(
-            combined_kpi_df.drop(columns="timestamp")
-        ):
+        if not combined_kpi_df.empty:
             kpi_map_index = kpi_map["index"]
             combined_kpi_df = (
                 combined_kpi_df.set_index("timestamp")
@@ -104,9 +103,16 @@ def merge_time_series(unique_kpi_maps: list, metric_type_index: int) -> pd.DataF
                 .reset_index()
             )
             all_records += combined_kpi_df.to_dict("records")
+        else:
+            useless_kpi_maps.append(kpi_map)
+    # clean KPI map
+    for kpi_map in useless_kpi_maps:
+        unique_kpi_maps.remove(kpi_map)
+
     all_df = pd.DataFrame(all_records)
     if not all_df.empty:
         all_df = all_df.groupby("timestamp").sum().reset_index()
+
     return all_df
 
 

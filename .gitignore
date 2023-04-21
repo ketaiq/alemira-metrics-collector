@@ -5,3 +5,4 @@ metrics/
 gcloud_metrics*/
 gcloud-metrics
 *.log
+nohup.out

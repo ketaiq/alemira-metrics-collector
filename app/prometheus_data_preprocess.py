@@ -24,14 +24,14 @@ class Metric:
 
     def check_data(self, data) -> bool:
         if not data:
-            logging.warning(f"Empty data in {self.metric_name}!")
+            print(f"Empty data in {self.metric_name}!")
             return False
         if type(data) is dict:
             if not data["result"]:
-                logging.warning(f"Empty results in {self.metric_name}!")
+                print(f"Empty results in {self.metric_name}!")
                 return False
             elif data["resultType"] != "matrix":
-                logging.warning(
+                print(
                     f"The format of input data is not supported in {self.metric_name}!"
                 )
                 return False
@@ -40,13 +40,11 @@ class Metric:
         elif type(data) is list:
             for item in data:
                 if type(item) is not MetricItem:
-                    logging.warning(
-                        f"The type of {item} is not supported in metric collection!"
-                    )
+                    print(f"The type of {item} is not supported in metric collection!")
                     return False
             return True
         else:
-            logging.warning(f"The type of {data} is not supported in metric data!")
+            print(f"The type of {data} is not supported in metric data!")
             return False
 
 
@@ -97,19 +95,6 @@ def get_metric(exp_name: str, metric_name: str) -> Metric:
     return Metric(metric_name, metric_data)
 
 
-def metric_is_too_large(exp_names: list, metric_name: str) -> bool:
-    for exp_name in exp_names:
-        metric_index = get_metric_index(exp_name, metric_name)
-        metric_path = os.path.join(
-            METRIC_PATH, exp_name, "metrics", f"metric-{metric_index}-day-1.json"
-        )
-        filesize = os.path.getsize(metric_path)
-        # consider size larger than 50MB as too large
-        if filesize / 1024 / 1024 > 50:
-            return True
-    return False
-
-
 def gen_unique_kpi_maps(exp_names: list, metric_name: str) -> list:
     unique_kpi_index = 1
     unique_kpi_json_map = dict()  # dict of json strings of kpi maps
@@ -128,6 +113,20 @@ def gen_unique_kpi_maps(exp_names: list, metric_name: str) -> list:
                 }
                 unique_kpi_index += 1
     return list(unique_kpi_json_map.values())
+
+
+def clean_kpi_maps(unique_kpi_maps: list):
+    # remove KPI with namespace different from alms or even no namespace label
+    useless_kpis = []
+    for kpi_map in unique_kpi_maps:
+        if (
+            "namespace" not in kpi_map["kpi"]
+            or "namespace" in kpi_map["kpi"]
+            and kpi_map["kpi"]["namespace"] != "alms"
+        ):
+            useless_kpis.append(kpi_map)
+    for kpi_map in useless_kpis:
+        unique_kpi_maps.remove(kpi_map)
 
 
 def is_constant_df(df: pd.DataFrame) -> bool:
@@ -172,24 +171,21 @@ def merge_valid_prometheus_metrics():
     metric_indices = [int(i) for i in metric_indices]
     metric_indices.sort()
     exp_names = get_exp_names()
-    num_metric_names = len(common_metric_names)
+    num_metric_indices = len(metric_indices)
     if not os.path.exists(COMBINED_METRIC_PATH):
         os.mkdir(COMBINED_METRIC_PATH)
 
-    for i in metric_indices:
-        metric_name = common_metric_names[i]
-        print(f"[{i}/{num_metric_names}] Processing {metric_name} ...")
+    for metric_index in metric_indices:
+        count = metric_indices.index(metric_index) + 1
+        metric_name = common_metric_names[metric_index]
+        print(f"[{count}/{num_metric_indices}] Processing {metric_name} ...")
+
         if metric_name.startswith("apiserver"):
-            logging.warning(f"Ignore {metric_name}!")
+            print(f"Ignore {metric_name}!")
             continue
+
         unique_kpi_maps = gen_unique_kpi_maps(exp_names, metric_name)
-        # remove KPI with namespace different from alms
-        useless_kpis = []
-        for kpi_map in unique_kpi_maps:
-            if "namespace" in kpi_map["kpi"] and kpi_map["kpi"]["namespace"] != "alms":
-                useless_kpis.append(kpi_map)
-        for kpi_map in useless_kpis:
-            unique_kpi_maps.remove(kpi_map)
+        clean_kpi_maps(unique_kpi_maps)
         # merge time series
         merged_df = merge_time_series(unique_kpi_maps, metric_name)
         # clean experment names in KPI map
@@ -200,12 +196,14 @@ def merge_valid_prometheus_metrics():
         # consider non-empty features
         if not merged_df.empty:
             with open(
-                os.path.join(COMBINED_METRIC_PATH, f"metric-{i}-kpi-map.json"),
+                os.path.join(
+                    COMBINED_METRIC_PATH, f"metric-{metric_index}-kpi-map.json"
+                ),
                 "w",
             ) as fp:
                 json.dump(unique_kpi_maps, fp)
             merged_df.to_csv(
-                os.path.join(COMBINED_METRIC_PATH, f"metric-{i}.csv"),
+                os.path.join(COMBINED_METRIC_PATH, f"metric-{metric_index}.csv"),
                 index=False,
             )
             num_added_kpis = len(merged_df.columns) - 1
@@ -213,12 +211,6 @@ def merge_valid_prometheus_metrics():
 
 
 def main():
-    logging.basicConfig(
-        filename="prometheus_data_preprocess.log",
-        level=logging.WARNING,
-        format="%(levelname)s %(asctime)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S %z",
-    )
     merge_valid_prometheus_metrics()
 
 
