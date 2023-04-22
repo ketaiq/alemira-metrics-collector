@@ -72,10 +72,6 @@ def gen_unique_kpi_maps(folders: list, metric_type_index: int) -> list:
     return list(unique_kpi_json_map.values())
 
 
-def is_constant_df(df: pd.DataFrame) -> bool:
-    return ((df == df.loc[0]).all()).all()
-
-
 def merge_time_series(unique_kpi_maps: list, metric_type_index: int) -> pd.DataFrame:
     """Merge time series for each metric type and write to a csv file."""
     all_records = []
@@ -139,7 +135,8 @@ def merge_valid_gcloud_metrics():
     metric_type_map = pd.read_csv(metric_type_map_path).set_index("index")
     max_metric_type_index = metric_type_map.index[-1]
 
-    for metric_type_index in metric_type_map.index:
+    # for metric_type_index in metric_type_map.index:
+    for metric_type_index in [69, 29, 9, 18, 58, 8, 28, 68]:
         metric_type = metric_type_map.loc[metric_type_index]
         # check metric type exist
         if not metric_type_exists(folders, metric_type_index):

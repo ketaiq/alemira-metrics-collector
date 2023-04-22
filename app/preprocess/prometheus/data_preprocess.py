@@ -162,6 +162,21 @@ def merge_time_series(unique_kpi_maps: list, metric_name: str):
     return all_df
 
 
+def gen_target_metric_names():
+    target_metric_names_path = os.path.join(METRIC_PATH, "target_metrics.csv")
+    target_metric_names = pd.read_csv(target_metric_names_path)["name"].to_list()
+    common_metric_names = pd.read_csv(os.path.join(METRIC_PATH, "common_metrics.csv"))[
+        "name"
+    ]
+    for name in common_metric_names:
+        if name.startswith("node_"):
+            target_metric_names.append(name)
+    target_metric_names.sort()
+    pd.DataFrame({"name": target_metric_names}).to_csv(
+        target_metric_names_path, index=False
+    )
+
+
 def merge_valid_prometheus_metrics():
     common_metric_names = pd.read_csv(os.path.join(METRIC_PATH, "common_metrics.csv"))[
         "name"
@@ -211,7 +226,7 @@ def merge_valid_prometheus_metrics():
 
 
 def main():
-    merge_valid_prometheus_metrics()
+    gen_target_metric_names()
 
 
 if __name__ == "__main__":
