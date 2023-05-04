@@ -7,22 +7,20 @@ from dataclasses import dataclass
 @dataclass
 class GCloudAgg:
     NUM_KPI_MAPS_THRESHOLD = 16  # based on metric type 1
-    GCLOUD_COMBINED_PATH = os.path.join("gcloud-metrics", "gcloud_combined")
-    GCLOUD_ROUND_TIME_PATH = os.path.join("gcloud-metrics", "gcloud_round_time")
-    AGG_OUTPUT_PATH = os.path.join("gcloud-metrics", "gcloud_aggregated")
+    gcloud_combined_path: str
+    gcloud_round_time_path: str
+    agg_output_path: str
 
-    @staticmethod
-    def get_metric_indices() -> list:
+    def get_metric_indices(self) -> list:
         return [
             filename.lstrip("metric-").rstrip("-kpi-map.json")
-            for filename in os.listdir(GCloudAgg.GCLOUD_COMBINED_PATH)
+            for filename in os.listdir(self.gcloud_combined_path)
             if filename.endswith("kpi-map.json")
         ]
 
-    @staticmethod
-    def get_df_kpi_map(metric_index: int) -> pd.DataFrame:
+    def get_df_kpi_map(self, metric_index: int) -> pd.DataFrame:
         kpi_map_path = os.path.join(
-            GCloudAgg.GCLOUD_COMBINED_PATH, f"metric-{metric_index}-kpi-map.json"
+            self.gcloud_combined_path, f"metric-{metric_index}-kpi-map.json"
         )
         with open(kpi_map_path) as fp:
             kpi_map_list = json.load(fp)
@@ -31,11 +29,12 @@ class GCloudAgg:
         df_kpi_map = pd.DataFrame(kpi_maps, index=indices)
         return df_kpi_map
 
-    @staticmethod
-    def get_df_metric(metric_index: int, is_round_time: bool = False) -> pd.DataFrame:
+    def get_df_metric(
+        self, metric_index: int, is_round_time: bool = False
+    ) -> pd.DataFrame:
         if is_round_time:
             metric_path = os.path.join(
-                GCloudAgg.GCLOUD_ROUND_TIME_PATH, f"metric-{metric_index}.csv"
+                self.gcloud_round_time_path, f"metric-{metric_index}.csv"
             )
             df = pd.read_csv(metric_path)
             if "Unnamed: 0" in df.columns:
@@ -43,7 +42,7 @@ class GCloudAgg:
             return df
         else:
             metric_path = os.path.join(
-                GCloudAgg.GCLOUD_COMBINED_PATH, f"metric-{metric_index}.csv"
+                self.gcloud_combined_path, f"metric-{metric_index}.csv"
             )
             return pd.read_csv(metric_path)
 
@@ -58,8 +57,9 @@ class GCloudAgg:
                 return True
         return False
 
-    @staticmethod
-    def aggregate_with_container_name(metric_index: int, df_kpi_map: pd.DataFrame):
+    def aggregate_with_container_name(
+        self, metric_index: int, df_kpi_map: pd.DataFrame
+    ):
         """Aggregate KPIs with same container name."""
         print(f"Aggregating metric {metric_index} with same container name ...")
         # remove labels with same values
@@ -73,20 +73,18 @@ class GCloudAgg:
             .groupby(group_columns)
             .agg(GCloudAgg.index_list)
         )
-        GCloudAgg.aggregate(metric_index, df_kpi_map_unique)
+        self.aggregate(metric_index, df_kpi_map_unique)
 
-    @staticmethod
-    def aggregate_with_all_kpis(metric_index: int, df_kpi_map: pd.DataFrame):
+    def aggregate_with_all_kpis(self, metric_index: int, df_kpi_map: pd.DataFrame):
         """Aggregate KPIs with only different node names."""
         print(f"Aggregating metric {metric_index} with all KPIs ...")
         isunique = df_kpi_map.nunique() == 1
         df_same = df_kpi_map[isunique.index[isunique]]
         group_columns = df_same.columns.to_list()
         df_same = df_same.reset_index().groupby(group_columns).agg(GCloudAgg.index_list)
-        GCloudAgg.aggregate(metric_index, df_same)
+        self.aggregate(metric_index, df_same)
 
-    @staticmethod
-    def aggregate_with_pod_service(metric_index: int, df_kpi_map: pd.DataFrame):
+    def aggregate_with_pod_service(self, metric_index: int, df_kpi_map: pd.DataFrame):
         """Aggregate KPIs with same pod service extracted from the pod name."""
         print(f"Aggregating metric {metric_index} with same pod service ...")
         # remove labels with same values
@@ -111,23 +109,23 @@ class GCloudAgg:
             .groupby(group_columns)
             .agg(GCloudAgg.index_list)
         )
-        GCloudAgg.aggregate(metric_index, df_kpi_map_unique)
+        self.aggregate(metric_index, df_kpi_map_unique)
 
-    @staticmethod
-    def aggregate_with_selected_labels(metric_index: int, df_kpi_map: pd.DataFrame):
+    def aggregate_with_selected_labels(
+        self, metric_index: int, df_kpi_map: pd.DataFrame
+    ):
         """Aggregate KPIs with selected labels."""
         print(f"Aggregating metric {metric_index} with selected labels ...")
         group_columns = df_kpi_map.columns.to_list()
         df_kpi_map_unique = (
             df_kpi_map.reset_index().groupby(group_columns).agg(GCloudAgg.index_list)
         )
-        GCloudAgg.aggregate(metric_index, df_kpi_map_unique)
+        self.aggregate(metric_index, df_kpi_map_unique)
 
-    @staticmethod
-    def adapt_no_agg(metric_index: int, df_kpi_map: pd.DataFrame):
+    def adapt_no_agg(self, metric_index: int, df_kpi_map: pd.DataFrame):
         """Adapt metrics no need for aggregation."""
         print(f"Adapting metric {metric_index} without aggregation ...")
-        df_metric = GCloudAgg.get_df_metric(metric_index, True).set_index("timestamp")
+        df_metric = self.get_df_metric(metric_index, True).set_index("timestamp")
         new_kpi_map_list = []
         new_kpi_map_index = 1
         for i in df_kpi_map.index:
@@ -146,14 +144,12 @@ class GCloudAgg:
                 )
                 new_kpi_map_index += 1
         with open(
-            os.path.join(
-                GCloudAgg.AGG_OUTPUT_PATH, f"metric-{metric_index}-kpi-map.json"
-            ),
+            os.path.join(self.agg_output_path, f"metric-{metric_index}-kpi-map.json"),
             "w",
         ) as fp:
             json.dump(new_kpi_map_list, fp)
         df_metric.to_csv(
-            os.path.join(GCloudAgg.AGG_OUTPUT_PATH, f"metric-{metric_index}.csv")
+            os.path.join(self.agg_output_path, f"metric-{metric_index}.csv")
         )
 
     @staticmethod
@@ -181,9 +177,11 @@ class GCloudAgg:
         )
         return df_metric_agg
 
-    @staticmethod
     def aggregate_normal(
-        df_kpi_map_unique: pd.DataFrame, df_metric: pd.DataFrame, metric_index: int
+        self,
+        df_kpi_map_unique: pd.DataFrame,
+        df_metric: pd.DataFrame,
+        metric_index: int,
     ):
         new_kpi_map_list = []
         new_kpi_map_index = 1
@@ -192,6 +190,8 @@ class GCloudAgg:
             # generate new KPI
             kpi_keys = df_kpi_map_unique.index.names
             kpi_values = row[0]
+            if type(kpi_values) is not tuple:
+                kpi_values = [kpi_values]
             kpi = {kpi_keys[i]: kpi_values[i] for i in range(len(kpi_keys))}
             new_kpi_map = {"index": new_kpi_map_index, "kpi": kpi}
 
@@ -224,18 +224,20 @@ class GCloudAgg:
         if not df_complete_agg.empty:
             with open(
                 os.path.join(
-                    GCloudAgg.AGG_OUTPUT_PATH, f"metric-{metric_index}-kpi-map.json"
+                    self.agg_output_path, f"metric-{metric_index}-kpi-map.json"
                 ),
                 "w",
             ) as fp:
                 json.dump(new_kpi_map_list, fp)
             df_complete_agg.to_csv(
-                os.path.join(GCloudAgg.AGG_OUTPUT_PATH, f"metric-{metric_index}.csv")
+                os.path.join(self.agg_output_path, f"metric-{metric_index}.csv")
             )
 
-    @staticmethod
     def aggregate_distribution(
-        df_kpi_map_unique: pd.DataFrame, df_metric: pd.DataFrame, metric_index: int
+        self,
+        df_kpi_map_unique: pd.DataFrame,
+        df_metric: pd.DataFrame,
+        metric_index: int,
     ):
         new_kpi_map_list = []
         new_kpi_map_index = 1
@@ -244,6 +246,8 @@ class GCloudAgg:
             # generate new KPI
             kpi_keys = df_kpi_map_unique.index.names
             kpi_values = row[0]
+            if type(kpi_values) is not tuple:
+                kpi_values = [kpi_values]
             kpi = {kpi_keys[i]: kpi_values[i] for i in range(len(kpi_keys))}
             new_kpi_map = {"index": new_kpi_map_index, "kpi": kpi}
 
@@ -309,35 +313,33 @@ class GCloudAgg:
         if not df_complete_agg.empty:
             with open(
                 os.path.join(
-                    GCloudAgg.AGG_OUTPUT_PATH, f"metric-{metric_index}-kpi-map.json"
+                    self.agg_output_path, f"metric-{metric_index}-kpi-map.json"
                 ),
                 "w",
             ) as fp:
                 json.dump(new_kpi_map_list, fp)
             df_complete_agg.to_csv(
-                os.path.join(GCloudAgg.AGG_OUTPUT_PATH, f"metric-{metric_index}.csv")
+                os.path.join(self.agg_output_path, f"metric-{metric_index}.csv")
             )
 
-    @staticmethod
-    def aggregate(metric_index: int, df_kpi_map_unique: pd.DataFrame):
-        df_metric = GCloudAgg.get_df_metric(metric_index, True).set_index("timestamp")
+    def aggregate(self, metric_index: int, df_kpi_map_unique: pd.DataFrame):
+        df_metric = self.get_df_metric(metric_index, True).set_index("timestamp")
         if GCloudAgg.is_distribution(df_metric.columns):
-            GCloudAgg.aggregate_distribution(df_kpi_map_unique, df_metric, metric_index)
+            self.aggregate_distribution(df_kpi_map_unique, df_metric, metric_index)
         else:
-            GCloudAgg.aggregate_normal(df_kpi_map_unique, df_metric, metric_index)
+            self.aggregate_normal(df_kpi_map_unique, df_metric, metric_index)
 
-    @staticmethod
-    def perform_aggregation_for_all_metrics():
-        if not os.path.exists(GCloudAgg.AGG_OUTPUT_PATH):
-            os.mkdir(GCloudAgg.AGG_OUTPUT_PATH)
-        for i in GCloudAgg.get_metric_indices():
-            df_kpi_map = GCloudAgg.get_df_kpi_map(i)
+    def perform_aggregation_for_all_metrics(self):
+        if not os.path.exists(self.agg_output_path):
+            os.mkdir(self.agg_output_path)
+        for i in self.get_metric_indices():
+            df_kpi_map = self.get_df_kpi_map(i)
             if len(df_kpi_map) > GCloudAgg.NUM_KPI_MAPS_THRESHOLD:
                 if "pod_name" in df_kpi_map:
                     if "container_name" in df_kpi_map:
-                        GCloudAgg.aggregate_with_container_name(i, df_kpi_map)
+                        self.aggregate_with_container_name(i, df_kpi_map)
                     else:
-                        GCloudAgg.aggregate_with_pod_service(i, df_kpi_map)
+                        self.aggregate_with_pod_service(i, df_kpi_map)
                 else:
                     # ignore columns with only single one unique value
                     isunique = df_kpi_map.nunique() == 1
@@ -350,43 +352,41 @@ class GCloudAgg:
                         columns=isunique.index[isunique]
                     )
                     if len(df_kpi_map_unique.columns) <= 1:
-                        GCloudAgg.aggregate_with_all_kpis(i, df_kpi_map)
+                        self.aggregate_with_all_kpis(i, df_kpi_map)
                     else:
-                        GCloudAgg.aggregate_with_selected_labels(i, df_kpi_map_unique)
+                        self.aggregate_with_selected_labels(i, df_kpi_map_unique)
+            elif len(df_kpi_map) == GCloudAgg.NUM_KPI_MAPS_THRESHOLD:
+                self.adapt_no_agg(i, df_kpi_map)
             else:
-                GCloudAgg.adapt_no_agg(i, df_kpi_map)
+                self.aggregate_with_all_kpis(i, df_kpi_map)
 
-    @staticmethod
-    def aggregate_by_minute():
+    def aggregate_by_minute(self):
         """Aggregate original metrics to minute granularity."""
-        if not os.path.exists(GCloudAgg.GCLOUD_ROUND_TIME_PATH):
-            os.mkdir(GCloudAgg.GCLOUD_ROUND_TIME_PATH)
-        for metric_index in GCloudAgg.get_metric_indices():
+        if not os.path.exists(self.gcloud_round_time_path):
+            os.mkdir(self.gcloud_round_time_path)
+        for metric_index in self.get_metric_indices():
             print(f"Processing metric {metric_index} ...")
-            df_metric = GCloudAgg.get_df_metric(metric_index)
+            df_metric = self.get_df_metric(metric_index)
             df_metric["timestamp"] = pd.to_datetime(
                 df_metric["timestamp"], unit="s"
             ).dt.round("min")
             if len(df_metric["timestamp"]) != len(
                 df_metric["timestamp"].drop_duplicates()
             ):
-                if GCloudAgg.is_distribution(df_metric.columns):
-                    df_metric = df_metric.groupby("timestamp").agg(
-                        "median"
-                    )  # no condition match
-                else:
-                    df_metric = df_metric.groupby("timestamp").agg("mean")
+                df_metric = df_metric.groupby("timestamp").agg("mean")
             df_metric.reset_index().to_csv(
-                os.path.join(
-                    GCloudAgg.GCLOUD_ROUND_TIME_PATH, f"metric-{metric_index}.csv"
-                ),
+                os.path.join(self.gcloud_round_time_path, f"metric-{metric_index}.csv"),
                 index=False,
             )
 
 
 def main():
-    # GCloudAgg.aggregate_by_minute()
-    GCloudAgg.perform_aggregation_for_all_metrics()
+    GCLOUD_COMBINED_PATH = os.path.join("gcloud-metrics", "gcloud_combined")
+    GCLOUD_ROUND_TIME_PATH = os.path.join("gcloud-metrics", "gcloud_round_time")
+    AGG_OUTPUT_PATH = os.path.join("gcloud-metrics", "gcloud_aggregated")
+    gcloud_agg = GCloudAgg(GCLOUD_COMBINED_PATH, GCLOUD_ROUND_TIME_PATH, AGG_OUTPUT_PATH)
+    gcloud_agg.aggregate_by_minute()
+    gcloud_agg.perform_aggregation_for_all_metrics()
 
 
 if __name__ == "__main__":

@@ -1,9 +1,13 @@
 # fetch APIs every 10s
+import pandas as pd
+from app import NORMAL_METRICS_PATH
 from app.prometheus_apis import PrometheusAPI
 import time, argparse, datetime, json, os
 
 
-def collect_metrics(username: str, password: str, start: str, end: str):
+def collect_known_prometheus_metrics(
+    username: str, password: str, start: str, end: str, output_path: str = ""
+):
     """
     Collect metrics of last two weeks.
 
@@ -21,16 +25,15 @@ def collect_metrics(username: str, password: str, start: str, end: str):
     experiment_start = datetime.datetime.fromisoformat(start)
     experiment_end = datetime.datetime.fromisoformat(end)
     prometheus_api = PrometheusAPI(username, password)
-    metric_names = prometheus_api.get_metric_names()
-    total_metrics = len(metric_names)
-    print(f"total metrics: {total_metrics}")
+    metric_names = pd.read_csv(
+        os.path.join(NORMAL_METRICS_PATH, "prometheus_target_metrics.csv")
+    )["name"].to_list()
 
     step = "1m"
-    metrics_dir = os.path.join(".", "metrics")
+    metrics_dir = os.path.join(output_path, "prometheus-metrics")
     if not os.path.exists(metrics_dir):
         os.mkdir(metrics_dir)
 
-    metric_names = prometheus_api.get_metric_names()
     num_metric_names = len(metric_names)
     # store map of metric names
     metric_names_map = dict(
@@ -95,7 +98,7 @@ def main():
         args.username = input("Please enter prometheus username: ")
     if not args.password:
         args.password = input("Please enter prometheus password: ")
-    collect_metrics(args.username, args.password, args.start, args.end)
+    collect_known_prometheus_metrics(args.username, args.password, args.start, args.end)
 
 
 if __name__ == "__main__":

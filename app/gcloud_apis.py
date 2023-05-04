@@ -90,6 +90,16 @@ class GCloudAPI:
         )
         return metric_descriptors_page_result
 
+    def get_metric_descriptors_by_name(self, metric_type: str):
+        metric_descriptors_request = ListMetricDescriptorsRequest(
+            name=self.name,
+            filter=f'metric.type = "{metric_type}"',
+        )
+        metric_descriptors_page_result = self.client.list_metric_descriptors(
+            request=metric_descriptors_request
+        )
+        return metric_descriptors_page_result
+
     @staticmethod
     def gen_all_metric_type_prefixes() -> list:
         """Generate all valid prefixes of metric types."""

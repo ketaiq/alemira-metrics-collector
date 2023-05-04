@@ -1,5 +1,9 @@
 import argparse
 import logging
+import os
+
+import pandas as pd
+from app import NORMAL_METRICS_PATH
 from app.gcloud_apis import GCloudAPI
 from app.model.gmetric import GMetric
 from app.model.metric_kind import MetricKind
@@ -22,7 +26,7 @@ def extract_resource_type(metric_desc):
         return metric_desc.monitored_resource_types[0]
 
 
-def collect_metrics(start: str, end: str, metrics_dir_suffix: str = ""):
+def collect_metrics_by_prefix(start: str, end: str, metrics_dir_suffix: str = ""):
     """
     Collect metrics of the experiment.
 
@@ -70,6 +74,54 @@ def collect_metrics(start: str, end: str, metrics_dir_suffix: str = ""):
             metric_type_index += 1
 
 
+def collect_known_gcloud_metrics(start: str, end: str, output_path: str = ""):
+    df_target_metrics = pd.read_csv(
+        os.path.join(NORMAL_METRICS_PATH, "gcloud_target_metrics.csv")
+    ).set_index("index")
+    gcloud_api = GCloudAPI()
+    for metric_type_index in df_target_metrics.index:
+        metric_type = df_target_metrics.loc[metric_type_index]["name"]
+        metric_descriptors = gcloud_api.get_metric_descriptors_by_name(metric_type)
+        for metric_desc in metric_descriptors:
+            print(f"Processing metric type {metric_desc.type} ...")
+            # collect time series
+            resource_labels = gcloud_api.get_resource_labels(
+                extract_resource_type(metric_desc)
+            )
+            if ResourceLabel.NAMESPACE.value in resource_labels:
+                # consider only metrics from the target namespace
+                time_series_pages = gcloud_api.get_time_series(
+                    metric_desc.type, start, end, namespace=TARGET_NAMESPACE
+                )
+            else:
+                time_series_pages = gcloud_api.get_time_series(
+                    metric_desc.type, start, end
+                )
+            kpi_index = 1
+            for time_series in time_series_pages:
+                gmetric = GMetric.from_time_series(time_series)
+                gmetric.write_kpi(output_path, metric_type_index, kpi_index)
+                kpi_index += 1
+
+
+def get_metric_kind():
+    df_target_metrics = pd.read_csv(
+        os.path.join(NORMAL_METRICS_PATH, "gcloud_target_metrics.csv")
+    ).set_index("index")
+    metric_kinds = []
+    gcloud_api = GCloudAPI()
+    for metric_type_index in df_target_metrics.index:
+        metric_type = df_target_metrics.loc[metric_type_index]["name"]
+        metric_descriptors = gcloud_api.get_metric_descriptors_by_name(metric_type)
+        for metric_desc in metric_descriptors:
+            metric_kinds.append(metric_desc.metric_kind)
+            break
+    df_target_metrics["kind"] = metric_kinds
+    df_target_metrics.reset_index().to_csv(
+        os.path.join(NORMAL_METRICS_PATH, "gcloud_target_metrics.csv"), index=False
+    )
+
+
 def collect_failure_execution():
     times = [
         (
@@ -108,7 +160,7 @@ def collect_failure_execution():
         metrics_dir_suffix = time[0]
         start = time[1]
         end = time[2]
-        collect_metrics(start, end, metrics_dir_suffix)
+        collect_metrics_by_prefix(start, end, metrics_dir_suffix)
 
 
 def collect_normal_execution():
@@ -133,16 +185,16 @@ def collect_normal_execution():
         metrics_dir_suffix = time[0]
         start = time[1]
         end = time[2]
-        collect_metrics(start, end, metrics_dir_suffix)
+        collect_metrics_by_prefix(start, end, metrics_dir_suffix)
 
 
 def main():
-    logging.basicConfig(
-        filename="gcloud_metrics_collector.log",
-        level=logging.WARNING,
-        format="%(levelname)s %(asctime)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S %z",
-    )
+    # logging.basicConfig(
+    #     filename="gcloud_metrics_collector.log",
+    #     level=logging.WARNING,
+    #     format="%(levelname)s %(asctime)s %(message)s",
+    #     datefmt="%Y-%m-%d %H:%M:%S %z",
+    # )
     # parser = argparse.ArgumentParser(
     #     prog="Google Cloud Metrics Collector for Alemira",
     #     description="Collect metrics from Google Cloud services",
@@ -152,8 +204,9 @@ def main():
     # args = parser.parse_args()
     # collect_metrics(args.start, args.end)
 
-    collect_normal_execution()
-    collect_failure_execution()
+    # collect_normal_execution()
+    # collect_failure_execution()
+    get_metric_kind()
 
 
 if __name__ == "__main__":

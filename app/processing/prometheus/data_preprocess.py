@@ -54,7 +54,13 @@ class MetricItem:
         self.values = pd.DataFrame(
             result_item["values"], columns=["timestamp", "value"]
         ).astype({"timestamp": "int64", "value": "float64"})
-        self.values["timestamp"] = pd.to_datetime(self.values["timestamp"], unit="s")
+        self.values["timestamp"] = pd.to_datetime(
+            self.values["timestamp"], unit="s"
+        ).dt.round("min")
+        if len(self.values["timestamp"]) != len(
+            self.values["timestamp"].drop_duplicates()
+        ):
+            self.values = self.values.groupby("timestamp").agg("mean").reset_index()
 
 
 def get_metric_names(exp_name: str) -> pd.Series:
@@ -91,7 +97,7 @@ def get_metric(exp_name: str, metric_name: str) -> Metric:
         with open(metric_path) as fp:
             metric_data = json.load(fp)
     except json.JSONDecodeError as e:
-        logging.error(f"{metric_name} in {exp_name} cannot be decoded!")
+        print(f"{metric_name} in {exp_name} cannot be decoded!")
     return Metric(metric_name, metric_data)
 
 
@@ -167,10 +173,14 @@ def gen_target_metric_names():
     target_metric_names = pd.read_csv(target_metric_names_path)["name"].to_list()
     common_metric_names = pd.read_csv(os.path.join(METRIC_PATH, "common_metrics.csv"))[
         "name"
-    ]
+    ].to_list()
+    for name in target_metric_names:
+        if name not in common_metric_names:
+            print(f"{name} is not common!")
     for name in common_metric_names:
-        if name.startswith("node_"):
+        if name.startswith("node_") or name.startswith("namespace_"):
             target_metric_names.append(name)
+    target_metric_names = list(set(target_metric_names))
     target_metric_names.sort()
     pd.DataFrame({"name": target_metric_names}).to_csv(
         target_metric_names_path, index=False

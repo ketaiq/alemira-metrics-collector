@@ -10,7 +10,7 @@ from app.model.value_type import ValueType
 
 @dataclass
 class GMetric:
-    METRICS_DIR_PREFIX = "gcloud_metrics"
+    METRICS_DIR_NAME = "gcloud_metrics"
     METRIC_TYPE_MAP_FNAME = "metric_type_map.csv"  # stores index -> metric type
     KPI_MAP_FNAME = "kpi_map.jsonl"  # each KPI is a unique combination of labels for a specifc metric type
     mtype: str
@@ -70,7 +70,7 @@ class GMetric:
     def write_metric_type(
         metrics_dir_suffix: str, metric_type_index: int, metric_type: str
     ):
-        metrics_dir = GMetric.METRICS_DIR_PREFIX + metrics_dir_suffix
+        metrics_dir = GMetric.METRICS_DIR_NAME + metrics_dir_suffix
         # store metric type map
         if not os.path.exists(metrics_dir):
             os.mkdir(metrics_dir)
@@ -90,10 +90,10 @@ class GMetric:
                     {"index": metric_type_index, "metric_type": metric_type}
                 )
 
-    def write_kpi(
-        self, metrics_dir_suffix: str, metric_type_index: int, kpi_index: int
-    ):
-        metrics_dir = GMetric.METRICS_DIR_PREFIX + metrics_dir_suffix
+    def write_kpi(self, output_path: str, metric_type_index: int, kpi_index: int):
+        metrics_dir = os.path.join(output_path, GMetric.METRICS_DIR_NAME)
+        if not os.path.exists(metrics_dir):
+            os.mkdir(metrics_dir)
         # write KPI labels map
         kpi_dir = os.path.join(metrics_dir, f"metric-type-{metric_type_index}")
         if not os.path.exists(kpi_dir):
@@ -109,7 +109,7 @@ class GMetric:
     @staticmethod
     def metric_type_exists(metrics_dir_suffix: str, metric_type: str) -> bool:
         """Check if the given metric type already exists."""
-        metrics_dir = GMetric.METRICS_DIR_PREFIX + metrics_dir_suffix
+        metrics_dir = GMetric.METRICS_DIR_NAME + metrics_dir_suffix
         metric_type_map_path = os.path.join(metrics_dir, GMetric.METRIC_TYPE_MAP_FNAME)
         fieldnames = ["index", "metric_type"]
         if os.path.exists(metric_type_map_path):
