@@ -148,13 +148,19 @@ def main():
     # visualize_failures(output_path, "cleaned_normal", df_cleaned_normal_stats)
 
     failure_dir = "/Users/ketai/Library/CloudStorage/OneDrive-USI/Thesis/experiments/failure injection"
-    failure_injection_log_path = os.path.join(
-        failure_dir, "alemira failure injection log", "log-failure-injection.csv"
-    )
-    df_failure_injection_log = pd.read_csv(failure_injection_log_path)
-    failures = []
-    for _, row in df_failure_injection_log.iterrows():
-        failures.append((row["Folder Name"], row["Failure Begin"], row["Failure End"]))
+    # failure_injection_log_path = os.path.join(failure_dir, "failure-injection-log.csv")
+    # df_failure_injection_log = pd.read_csv(failure_injection_log_path)
+    # failures = []
+    # for _, row in df_failure_injection_log.iterrows():
+    #     failures.append((row["Folder Name"], row["Failure Begin"], row["Failure End"]))
+    failures = [
+        (
+            "day-8-linear-memory-stress-userapi-350",
+            "2023-05-10T13:03:00+02:00",
+            "2023-05-10T15:03:00+02:00",
+        )
+    ]
+
     for failure in failures:
         failure_path = os.path.join(
             failure_dir, failure[0], "alemira_stats_history.csv"

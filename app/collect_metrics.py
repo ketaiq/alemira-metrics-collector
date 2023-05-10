@@ -17,7 +17,7 @@ def collect_metrics(
         output_path,
     )
     # collect Prometheus time series
-    # collect_known_prometheus_metrics(username, password, start, end, output_path)
+    collect_known_prometheus_metrics(username, password, start, end, output_path)
 
 
 def collect_metrics_for_all_faulty_experiments(username: str, password: str):
@@ -54,13 +54,13 @@ def main():
     if not args.password:
         args.password = input("Please enter prometheus password: ")
 
-    # start = "2023-05-01T19:57:42+02:00"
-    # end = "2023-05-01T23:06:08+02:00"
-    # folder = "day-8-constant-cpu-stress-userapi-3"
-    # output_path = os.path.join(FAILURE_INJECTION_PATH, folder)
-    # collect_metrics(args.username, args.password, start, end, output_path)
+    start = "2023-05-09T22:56:25+02:00"
+    end = "2023-05-10T01:56:25+02:00"
+    folder = "day-8-linear-memory-stress-userapi-290"
+    output_path = os.path.join(FAILURE_INJECTION_PATH, folder)
+    collect_metrics(args.username, args.password, start, end, output_path)
 
-    collect_metrics_for_all_faulty_experiments(args.username, args.password)
+    # collect_metrics_for_all_faulty_experiments(args.username, args.password)
 
 
 if __name__ == "__main__":
