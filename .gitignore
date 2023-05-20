@@ -7,3 +7,4 @@ gcloud-metrics
 *.log
 nohup.out
 visualizations/
+*.html

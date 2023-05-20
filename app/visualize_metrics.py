@@ -12,7 +12,7 @@ def visualize_metrics_dynamics(df, title):
         x=np.arange(len(df_.values)),
         title=title,
         width=2000,
-        height=1200,
+        height=900,
     )
     fig.write_html(f"{title}.html")
 
@@ -22,7 +22,7 @@ def visualize_normal_metrics():
     df_normal = pd.read_csv(metrics_path).set_index("timestamp")
     df_normal.index = pd.to_datetime(df_normal.index)
     df_normal.sort_index(inplace=True)
-    visualize_metrics_dynamics(df_normal[:1441], "normal")
+    visualize_metrics_dynamics(df_normal, "normal")
 
 
 def visualize_faulty_metrics(folder: str):
@@ -40,7 +40,10 @@ def main():
     visualize_normal_metrics()
     failure_dir = "/Users/ketai/Library/CloudStorage/OneDrive-USI/Thesis/experiments/failure injection"
     for folder in os.listdir(failure_dir):
-        if folder.startswith("day-"):
+        if (
+            folder.startswith("day-")
+            and "day-8-userapi-linear-network-delay-051308" in folder
+        ):
             visualize_faulty_metrics(folder)
 
 
