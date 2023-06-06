@@ -5,39 +5,6 @@ from app.processing.locust.data_preprocess import agg_stats_to_minute
 from datetime import datetime
 
 
-def plot_response_time_before_and_after_cleaning():
-    metrics_parent_path = (
-        "/Users/ketai/Library/CloudStorage/OneDrive-USI/Thesis/experiments/normal"
-    )
-    df_list = []
-    for i in range(1, 15):
-        folder = f"day-{i}"
-        agg_stats_path = os.path.join(
-            metrics_parent_path, folder, "locust_aggregated_stats.csv"
-        )
-        df_stats = pd.read_csv(agg_stats_path)
-        df_list.append(df_stats)
-    complete_df = pd.concat(df_list)
-    original_response_time = complete_df["lm-95%"].to_list()
-    df_cleaned = pd.read_csv(
-        os.path.join(metrics_parent_path, "locust_normal_stats.csv")
-    )
-    cleaned_response_time = df_cleaned["lm-95%"].to_list()
-
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
-    axs[0].plot(original_response_time)
-    axs[1].plot(cleaned_response_time)
-    axs[0].set_title("Before cleaning")
-    axs[1].set_title("After cleaning")
-
-    for ax in axs.flat:
-        ax.set_ylabel("response time (ms)")
-        ax.set_xlabel("minutes")
-    plt.savefig(
-        os.path.join("visualizations", "compare-response-time"), bbox_inches="tight"
-    )
-
-
 def visualize_response_time(
     output_path: str,
     figprefix: str,
@@ -164,7 +131,6 @@ def draw_failure(
 
 
 def main():
-    # plot_response_time_before_and_after_cleaning()
     output_path = "visualizations"
     if not os.path.exists(output_path):
         os.mkdir(output_path)
