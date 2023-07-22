@@ -36,5 +36,6 @@ Collect system metrics from prometheus of alemira.
 ## 2. Environment
 
 ```sh
+conda create -n alemira -c conda-forge python=3.10 black requests locust pyyaml pandas scikit-learn matplotlib jsonlines
 pip install google-cloud-monitoring
 ```
