@@ -68,26 +68,32 @@ class GMetric:
 
     @staticmethod
     def write_metric_type(
-        metrics_dir_suffix: str, metric_type_index: int, metric_type: str
+        output_path: str, metric_type_index: int, metric_name: str, metric_kind: str
     ):
-        metrics_dir = GMetric.METRICS_DIR_NAME + metrics_dir_suffix
-        # store metric type map
-        if not os.path.exists(metrics_dir):
-            os.mkdir(metrics_dir)
-        metric_type_map_path = os.path.join(metrics_dir, GMetric.METRIC_TYPE_MAP_FNAME)
-        fieldnames = ["index", "metric_type"]
+        metric_type_map_path = os.path.join(
+            output_path, GMetric.METRICS_DIR_NAME, GMetric.METRIC_TYPE_MAP_FNAME
+        )
+        fieldnames = ["index", "name", "kind"]
         if not os.path.exists(metric_type_map_path):
             with open(metric_type_map_path, "w", newline="") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames)
                 writer.writeheader()
                 writer.writerow(
-                    {"index": metric_type_index, "metric_type": metric_type}
+                    {
+                        "index": metric_type_index,
+                        "name": metric_name,
+                        "kind": metric_kind,
+                    }
                 )
         else:
             with open(metric_type_map_path, "a", newline="") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames)
                 writer.writerow(
-                    {"index": metric_type_index, "metric_type": metric_type}
+                    {
+                        "index": metric_type_index,
+                        "name": metric_name,
+                        "kind": metric_kind,
+                    }
                 )
 
     def write_kpi(self, output_path: str, metric_type_index: int, kpi_index: int):
@@ -107,15 +113,16 @@ class GMetric:
             self.df_points.to_csv(kpi_path, index=False)
 
     @staticmethod
-    def metric_type_exists(metrics_dir_suffix: str, metric_type: str) -> bool:
+    def metric_type_exists(output_path: str, metric_type: str) -> bool:
         """Check if the given metric type already exists."""
-        metrics_dir = GMetric.METRICS_DIR_NAME + metrics_dir_suffix
-        metric_type_map_path = os.path.join(metrics_dir, GMetric.METRIC_TYPE_MAP_FNAME)
-        fieldnames = ["index", "metric_type"]
+        metric_type_map_path = os.path.join(
+            output_path, GMetric.METRICS_DIR_NAME, GMetric.METRIC_TYPE_MAP_FNAME
+        )
+        fieldnames = ["index", "name", "kind"]
         if os.path.exists(metric_type_map_path):
             with open(metric_type_map_path, newline="") as csvfile:
                 reader = csv.DictReader(csvfile, fieldnames)
                 for row in reader:
-                    if row["metric_type"] == metric_type:
+                    if row["name"] == metric_type:
                         return True
         return False

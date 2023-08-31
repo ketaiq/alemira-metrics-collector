@@ -1,21 +1,29 @@
 import argparse
 import os
+
 import pandas as pd
 from app import FAILURE_INJECTION_PATH
 
-from app.collect_gcloud_metrics import collect_known_gcloud_metrics
-from app.collect_prometheus_metrics import collect_known_prometheus_metrics
+from app.collect_gcloud_metrics import (
+    collect_all_gcloud_metrics,
+    collect_known_gcloud_metrics,
+)
+from app.collect_prometheus_metrics import (
+    collect_known_prometheus_metrics,
+    collect_prometheus_metric_names,
+)
 
 
 def collect_metrics(
     username: str, password: str, start: str, end: str, output_path: str
 ):
     # collect GCloud time series
-    collect_known_gcloud_metrics(
-        start,
-        end,
-        output_path,
-    )
+    # collect_known_gcloud_metrics(
+    #     start,
+    #     end,
+    #     output_path,
+    # )
+    collect_all_gcloud_metrics(start, end, output_path)
     # collect Prometheus time series
     collect_known_prometheus_metrics(username, password, start, end, output_path)
 
@@ -54,13 +62,15 @@ def main():
     if not args.password:
         args.password = input("Please enter prometheus password: ")
 
-    start = "2023-06-02T20:16:07+02:00"
-    end = "2023-06-02T23:16:05+02:00"
-    folder = "day-8-constant-cpu-stress-userapi-060220"
-    output_path = os.path.join(FAILURE_INJECTION_PATH, folder)
+    start = "2023-08-28T10:46:36+02:00"
+    end = "2023-08-28T16:46:36+02:00"
+    folder = "test-6h"
+    # output_path = os.path.join(FAILURE_INJECTION_PATH, folder)
+    output_path = os.path.join("/Users/ketai/Downloads/extra-experiments", folder)
     collect_metrics(args.username, args.password, start, end, output_path)
-
+    # collect_all_gcloud_metrics(start, end, output_path)
     # collect_metrics_for_all_faulty_experiments(args.username, args.password)
+    # collect_prometheus_metric_names(args.username, args.password, output_path)
 
 
 if __name__ == "__main__":

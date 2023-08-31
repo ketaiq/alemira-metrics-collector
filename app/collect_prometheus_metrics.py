@@ -80,6 +80,13 @@ def collect_known_prometheus_metrics(
         day_count += 1
 
 
+def collect_prometheus_metric_names(username: str, password: str, output_path: str):
+    prometheus_api = PrometheusAPI(username, password)
+    metric_names = prometheus_api.get_metric_names()
+    df = pd.DataFrame({"name": metric_names})
+    df.to_csv(os.path.join(output_path, "prometheus_metric_names.csv"), index=False)
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="Alemira Metrics Collector",

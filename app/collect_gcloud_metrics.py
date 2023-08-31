@@ -104,6 +104,48 @@ def collect_known_gcloud_metrics(start: str, end: str, output_path: str = ""):
                 kpi_index += 1
 
 
+def collect_all_gcloud_metrics(start: str, end: str, output_path: str = ""):
+    metric_type_index = 1
+    gcloud_api = GCloudAPI()
+    metric_type_prefixes = gcloud_api.gen_all_metric_type_prefixes()
+    gcloud_metrics_path = os.path.join(output_path, GMetric.METRICS_DIR_NAME)
+    if not os.path.exists(gcloud_metrics_path):
+        os.mkdir(gcloud_metrics_path)
+    for prefix in metric_type_prefixes:
+        metric_descriptors = gcloud_api.get_metric_descriptors(prefix)
+        for metric_desc in metric_descriptors:
+            print(f"Processing metric type {metric_desc.type} ...")
+            if GMetric.metric_type_exists(output_path, metric_desc.type):
+                metric_type_index += 1
+                continue
+            # store metric type
+            GMetric.write_metric_type(
+                output_path,
+                metric_type_index,
+                metric_desc.type,
+                metric_desc.metric_kind,
+            )
+            # collect time series
+            resource_labels = gcloud_api.get_resource_labels(
+                extract_resource_type(metric_desc)
+            )
+            if ResourceLabel.NAMESPACE.value in resource_labels:
+                # consider only metrics from the target namespace
+                time_series_pages = gcloud_api.get_time_series(
+                    metric_desc.type, start, end, namespace=TARGET_NAMESPACE
+                )
+            else:
+                time_series_pages = gcloud_api.get_time_series(
+                    metric_desc.type, start, end
+                )
+            kpi_index = 1
+            for time_series in time_series_pages:
+                gmetric = GMetric.from_time_series(time_series)
+                gmetric.write_kpi(output_path, metric_type_index, kpi_index)
+                kpi_index += 1
+            metric_type_index += 1
+
+
 def get_metric_kind():
     df_target_metrics = pd.read_csv(
         os.path.join(NORMAL_METRICS_PATH, "gcloud_target_metrics.csv")
