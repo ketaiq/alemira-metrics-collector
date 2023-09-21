@@ -76,13 +76,13 @@ def main():
     #     "linear-network-loss-userapi-072219",
     # )
     log = FailureInjectionLog(
-        FailureType.NetworkLoss,
+        FailureType.NetworkDelay,
         FailurePattern.Constant,
         TargetService.userapi,
-        "2023-05-15T12:30:44+02:00",
-        "2023-05-15T15:01:00+02:00",
-        "2023-05-15T13:01:00+02:00",
-        "day-8-constant-network-loss-userapi-051512",
+        "2023-05-16T16:52:03+02:00",
+        "2023-05-16T17:22:30+02:00",
+        "2023-05-16T19:22:30+02:00",
+        "constant-network-delay-userapi-051616",
     )
     handler.append_log_to_file(log)
 

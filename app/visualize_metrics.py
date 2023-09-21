@@ -51,9 +51,9 @@ def main():
     #         and "day-8-userapi-linear-network-delay-051308" in folder
     #     ):
     #         visualize_faulty_metrics(folder)
-    experiment_name = "linear-network-delay-userhandlers-082316"
+    experiment_name = "test_normal-6h"
     visualize_faulty_metrics(
-        f"/Users/ketai/Downloads/extra-experiments/{experiment_name}/{experiment_name}.csv",
+        f"/Users/ketai/Dropbox/Alemira-Project/Datasets/pod-autoscaling/test_normal-6h.csv",
         experiment_name,
     )
 
