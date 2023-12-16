@@ -62,9 +62,9 @@ def main():
     if not args.password:
         args.password = input("Please enter prometheus password: ")
 
-    start = "2023-09-21T11:31:55+02:00"
-    end = "2023-09-21T14:01:55+02:00"
-    folder = "linear-network-corrupt-redis-092111"
+    start = "2023-12-16T08:25:37+01:00"
+    end = "2023-12-16T10:55:37+01:00"
+    folder = "linear-network-delay-userapi-121608"
     # output_path = os.path.join(FAILURE_INJECTION_PATH, folder)
     output_path = os.path.join("/Users/ketai/Downloads/extra-experiments", folder)
     collect_metrics(args.username, args.password, start, end, output_path)

@@ -7,9 +7,9 @@ import jsonlines
 
 def inspect_prometheus():
     metric_path = (
-        "/Users/ketai/Library/CloudStorage/OneDrive-USI/Thesis/experiments/normal"
+        "/Users/ketai/Downloads/Alemira/Thesis/experiments/normal"
     )
-    common_metrics = pd.read_csv(os.path.join(metric_path, "common_metrics.csv"))[
+    common_metrics = pd.read_csv(os.path.join(metric_path, "prometheus_target_metrics.csv"))[
         "name"
     ]
     prometheus_data_dirs = [
@@ -49,13 +49,14 @@ def metric_type_exists(metric_path: str, folders: list, metric_type_index: int) 
 
 
 def inspect_gcloud():
-    metric_path = "gcloud-metrics"
+    experiments_path = "/Users/ketai/Downloads/Alemira/Thesis/experiments/normal"
+    metric_path = os.path.join(experiments_path, "gcloud-metrics")
     folders = [
         folder
         for folder in os.listdir(metric_path)
         if folder.startswith("gcloud_metrics-day")
     ]
-    metric_type_map_path = os.path.join(metric_path, "metric_type_map.csv")
+    metric_type_map_path = os.path.join(experiments_path, "gcloud_target_metrics.csv")
     metric_type_map = pd.read_csv(metric_type_map_path).set_index("index")
     num_column = 0
     num_row = 60 * 24 * 14
@@ -75,7 +76,7 @@ def inspect_gcloud():
 
 
 def main():
-    # inspect_prometheus()
+    inspect_prometheus()
     inspect_gcloud()
 
 
