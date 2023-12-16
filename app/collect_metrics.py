@@ -65,8 +65,11 @@ def main():
     start = "2023-12-16T08:25:37+01:00"
     end = "2023-12-16T10:55:37+01:00"
     folder = "linear-network-delay-userapi-121608"
+    if not os.path.exists(folder):
+        os.mkdir(folder)
     # output_path = os.path.join(FAILURE_INJECTION_PATH, folder)
-    output_path = os.path.join("/Users/ketai/Downloads/extra-experiments", folder)
+    # output_path = os.path.join("/Users/ketai/Downloads/extra-experiments", folder)
+    output_path = folder
     collect_metrics(args.username, args.password, start, end, output_path)
     # collect_all_gcloud_metrics(start, end, output_path)
     # collect_metrics_for_all_faulty_experiments(args.username, args.password)

@@ -25,9 +25,7 @@ def collect_known_prometheus_metrics(
     experiment_start = datetime.datetime.fromisoformat(start)
     experiment_end = datetime.datetime.fromisoformat(end)
     prometheus_api = PrometheusAPI(username, password)
-    metric_names = pd.read_csv(
-        os.path.join(NORMAL_METRICS_PATH, "prometheus_target_metrics.csv")
-    )["name"].to_list()
+    metric_names = pd.read_csv("prometheus_target_metrics.csv")["name"].to_list()
 
     step = "1m"
     metrics_dir = os.path.join(output_path, "prometheus-metrics")
